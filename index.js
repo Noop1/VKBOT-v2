@@ -16,7 +16,7 @@ vk.updates.on(['new_message'], async ctx => {
         return;
     }
 
-    log(`[MESSAGE] @id${ctx.senderId}/${ctx.chatId || 0}: ${ctx.text.slice(0, 42)}`);
+    log(`[MESSAGE] @id${ ctx.senderId }/${ ctx.chatId || 0 }: ${ ctx.text.slice(0, 42) }`);
 
     ctx.user = await buildUser(ctx.senderId);
 
@@ -247,7 +247,7 @@ async function buildUser(vkId) {
                 last_name: lastName
             } 
         ] = await vk.api.users.get({
-            user_ids: ctx.senderId
+            user_ids: vkId
         })
 
         user = await User.create({
