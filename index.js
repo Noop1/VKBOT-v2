@@ -35,7 +35,9 @@ vk.updates.on(['new_message'], async ctx => {
     }
 });
 
-vk.updates.start();
+vk.updates.start()
+    .then(() => console.log('Бот слушает сообщения'))
+    .catch(console.log);
 
 command({
     pattern: /^\/(гбг|генбугурт|\@)/i,
@@ -169,7 +171,7 @@ command({
 
         try {
             await ctx.sendPhotos(
-                `http://www.lunach.ru/?cum=&url=${ largePhoto }`
+                `http://www.lunach.ru/?cum&url=${ largePhoto }`
             );
         } catch (e) {
             console.log(e);
