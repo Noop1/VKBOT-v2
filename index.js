@@ -1,5 +1,8 @@
 const { VK } = require('vk-io');
 
+const User = require('./user');
+const mathJs = require('mathjs');
+
 const vk = new VK({
     token: 'YOUR_TOKEN',
     apiMode: 'parallel_selected',
@@ -14,6 +17,8 @@ vk.updates.on(['new_message'], async ctx => {
     }
 
     log(`[MESSAGE] @id${ctx.senderId}/${ctx.chatId || 0}: ${ctx.text.slice(0, 42)}`);
+
+    ctx.user = await buildUser(ctx.senderId);
 
     const command = findCommand(ctx.text);
 
@@ -124,16 +129,82 @@ command({
     pattern: /^\/try\s(.*)/i,
     description: '/try [текст] -- попытка',
     async handler(ctx) {
-        // TODO: сохранять Ф.И в БД и использовать здесь
-
-        const [ { first_name, last_name } ] = await vk.api.users.get({
-            user_ids: ctx.senderId
-        });
+        const { firstName, lastName } = ctx.user;
 
         const [ , string ] = ctx.args;
 
         await ctx.send(
-            `${ first_name } ${ last_name } попробовал ${ string } | ${ getRandomInt(0, 1) ? 'Успешно' : 'Fail' }`
+            `${ firstName } ${ lastName } попробовал ${ string } | ${ getRandomInt(0, 1) ? 'Успешно' : 'Fail' }`
+        );
+
+        return;
+    }
+});
+
+command({
+    pattern: /^\/сколько\s(.*)/i,
+    description: '/сколько [ваше уравнение] -- получаем ответ',
+    async handler(ctx) {
+        const result = mathJs.eval(ctx.args[1]);
+
+        await ctx.send(
+            `${ ctx.args[1] } = ${ result }`
+        );
+
+        return;
+    }
+});
+
+command({
+    pattern: /^\/(кончил|sperm)/i,
+    description: '/кончил [пикча] [алиасы: /sperm] -- украшает вашу пикчу',
+    async handler(ctx) {
+        if (!ctx.hasAttachments('photo')) {
+            await ctx.send('Вы не прикрепили изображение.');
+
+            return;
+        }
+
+        const [ { largePhoto } ] = ctx.getAttachments('photo');
+
+        try {
+            await ctx.sendPhotos(
+                `http://www.lunach.ru/?cum=&url=${ largePhoto }`
+            );
+        } catch (e) {
+            console.log(e);
+
+            await ctx.send('Я не смог загрузить обработанное изображние :C');
+        }
+
+        return;
+    }
+});
+
+command({
+    pattern: /^\/restyle ([^]+)/i,
+    description: '/restyle [ТЕКСТ] -- украшает ваш текст',
+    async handler(ctx) {
+        const [ , text ] = ctx.args;
+
+        await ctx.send(
+            text.split('')
+                .map(e => e.toUpperCase())
+                .join(' ')
+        );
+
+        return;
+    }
+});
+
+command({
+    pattern: /^\/password/,
+    description: '/password -- генерация пароля',
+    async handler(ctx) {
+        const password = (Math.random()).toString(36).slice(2);
+
+        await ctx.send(
+            `Your password: ${ password }`
         );
 
         return;
@@ -160,6 +231,33 @@ function command(options) {
 
 function log(text) {
     console.log(text);
+}
+
+async function buildUser(vkId) {
+    let user = await User.findOne({
+        where: {
+            vkId
+        }
+    });
+
+    if (!user) {
+        const [ 
+            { 
+                first_name: firstName, 
+                last_name: lastName
+            } 
+        ] = await vk.api.users.get({
+            user_ids: ctx.senderId
+        })
+
+        user = await User.create({
+            vkId,
+            firstName,
+            lastName
+        });
+    }
+
+    return user;
 }
 
 /**
