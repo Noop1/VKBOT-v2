@@ -40,6 +40,54 @@ vk.updates.start()
     .catch(console.log);
 
 command({
+    pattern: /^\/(?:info|инфо)\s(.*)/i,
+    description: '/info -- покажет информацию о странице по id',
+    async handler(ctx) {
+        const response = (
+            await vk.snippets.resolveResource(ctx.args[1])
+        );
+
+        if (response.type !== 'user') {
+            return;
+        }
+
+        const [ user ] = await vk.api.users.get({
+            user_ids: response.id,
+            fields: [
+                'photo_200',
+                'city',
+                'verified',
+                'status',
+                'domain',
+                'followers_count',
+                'bdate'
+            ]
+        });
+
+        const message = [
+            `👨 Информация о пользователе:`,
+            `📍 ID: ${ user.id }`,
+            `📋 Name: ${ user.first_name }`,
+            `| Domain: vk.com/${ user.domain }`,
+            `🎉 BDay: ${ user.bdate }`,
+            `👫 Followers: ${ user.followers_count }`,
+            `🎴 Photo: ${ user.photo_200 }`,
+            `💬 Status: ${ user.status }`
+        ].join('\n');
+
+        try {
+            await ctx.sendPhotos(user.photo_200, {
+                message
+            });
+        } catch (e) {
+            await ctx.send(message);
+        }
+
+        return;
+    }
+});
+
+command({
     pattern: /^\/(гбг|генбугурт|\@)/i,
     description: '/гбг [fwd] -- генерация бугурта',
     async handler(ctx) {
