@@ -11,7 +11,7 @@ const vk = new VK({
 
 const commands = [];
 
-vk.updates.on(['new_message'], async ctx => {
+vk.updates.on(['message_new'], async ctx => {
     if (!ctx.text) {
         return;
     }
